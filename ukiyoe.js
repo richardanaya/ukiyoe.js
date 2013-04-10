@@ -109,55 +109,100 @@ Ukiyoe.DrawingContext.prototype.drawSprite = function(sprite){
 
 Ukiyoe.Scene = function(){
     this.resources = {
-        images: {}
+        images: {},
+        sounds: {},
+        music: {}
     };
     this.ready = false;
 };
 
 Ukiyoe.Scene.prototype.load = function(complete){
-    var imagesToLoad = [];
+    var assetToLoad = [];
     for(var i in this.images){
-        imagesToLoad.push({name:i,path:this.images[i]})
+        assetToLoad.push({type:"image",name:i,path:this.images[i]})
+    }
+    for(var i in this.sounds){
+        var path = this.sounds[i]
+        if(typeof(path)=="string"){
+            path = [path];
+        }
+        assetToLoad.push({type:"sound",name:i,path:path});
+    }
+    for(var i in this.music){
+        var path = this.music[i]
+        if(typeof(path)=="string"){
+            path = [path];
+        }
+        assetToLoad.push({type:"music",name:i,path:path});
     }
 
-    var numImages = imagesToLoad.length;
+    var numAssets = assetToLoad.length;
 
     var _this = this;
 
-    var loadImage = function(){
-        if(numImages == 0){
+    var loadAsset = function(){
+        if(numAssets == 0){
             _this.ready = true;
             _this.initialize();
             return;
         }
-        var img = new Image();
-        img.onload = function(){
-            _this.resources.images[imagesToLoad[numImages-1].name] = img;
-            var c = document.createElement("canvas");
-            c.width = img.width;
-            c.height = img.height;
-            var tctx = c.getContext('2d');
-            tctx.drawImage(img,0,0);
-            var d = tctx.getImageData(0,0,img.width,img.width).data;
-            var mask = new Uint8Array(img.width*img.height);
-            for(var x = 0 ; x < img.width; x++ ){
-                for(var y = 0 ; y < img.height; y++ ){
-                    var alpha = d[(y*img.width+x)*4+3];
-                    if(alpha==0){
-                        mask[y*img.width+x] = 0;
-                    }
-                    else {
-                        mask[y*img.width+x] = 1;
+
+        if(assetToLoad[numAssets-1].type=="image"){
+            var img = new Image();
+            img.onload = function(){
+                _this.resources.images[assetToLoad[numAssets-1].name] = img;
+                var c = document.createElement("canvas");
+                c.width = img.width;
+                c.height = img.height;
+                var tctx = c.getContext('2d');
+                tctx.drawImage(img,0,0);
+                var d = tctx.getImageData(0,0,img.width,img.width).data;
+                var mask = new Uint8Array(img.width*img.height);
+                for(var x = 0 ; x < img.width; x++ ){
+                    for(var y = 0 ; y < img.height; y++ ){
+                        var alpha = d[(y*img.width+x)*4+3];
+                        if(alpha==0){
+                            mask[y*img.width+x] = 0;
+                        }
+                        else {
+                            mask[y*img.width+x] = 1;
+                        }
                     }
                 }
-            }
-            img.mask = mask;
-            numImages--;
-            loadImage();
-        };
-        img.src = imagesToLoad[numImages-1].path;
+                img.mask = mask;
+                numAssets--;
+                loadAsset();
+            };
+            img.src = assetToLoad[numAssets-1].path;
+        }
+        if(assetToLoad[numAssets-1].type=="sound"){
+            var sound = new Howl({
+                urls: assetToLoad[numAssets-1].path,
+                autoplay: false,
+                loop: false,
+                volume: 1,
+                onload: function() {
+                    _this.resources.sounds[assetToLoad[numAssets-1].name] = sound;
+                    numAssets--;
+                    loadAsset();
+                }
+            });
+        }
+        if(assetToLoad[numAssets-1].type=="music"){
+            var music = new Howl({
+                urls: assetToLoad[numAssets-1].path,
+                autoplay: false,
+                loop: true,
+                volume: 1,
+                onload: function() {
+                    _this.resources.music[assetToLoad[numAssets-1].name] = music;
+                    numAssets--;
+                    loadAsset();
+                }
+            });
+        }
     }
-    loadImage();
+    loadAsset();
 };
 
 Ukiyoe.Scene.prototype.unload = function(){

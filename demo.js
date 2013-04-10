@@ -17,6 +17,12 @@ $(document).ready(function(){
         this.images = {
             player: "bunny.png"
         };
+        this.sounds = {
+            bonk : ['bonk.wav']
+        }
+        this.music = {
+            background_music : ['music.mp3']
+        }
     };
     DemoScene.prototype = Object.create(Ukiyoe.Scene.prototype);
 
@@ -28,6 +34,8 @@ $(document).ready(function(){
         this.enemy = new Ukiyoe.Sprite(this.resources.images.player);
         this.enemy.x = 200
         this.enemy.y = 100;
+
+        this.resources.music.background_music.play();
 
     };
 
@@ -74,6 +82,7 @@ $(document).ready(function(){
         if(this.player.collidesWith(this.enemy)){
             this.player.x = oldX;
             this.player.y = oldY;
+            this.resources.sounds.bonk.play();
         }
 
         stats.begin();
