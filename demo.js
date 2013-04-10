@@ -58,16 +58,16 @@ $(document).ready(function(){
         var oldX = this.player.x;
         var oldY = this.player.y;
 
-        if(gx == 1){
+        if(gx == 1 || Key.isDown(Key.RIGHT_ARROW)  || Key.isDown(Key.D)){
             this.player.x += 1;
         }
-        if(gx == -1){
+        if(gx == -1  || Key.isDown(Key.LEFT_ARROW) || Key.isDown(Key.A)){
             this.player.x -= 1;
         }
-        if(gy == 1){
+        if(gy == 1  || Key.isDown(Key.DOWN_ARROW) || Key.isDown(Key.S)){
             this.player.y += 1;
         }
-        if(gy == -1){
+        if(gy == -1  || Key.isDown(Key.UP_ARROW) || Key.isDown(Key.W)){
             this.player.y -= 1;
         }
 
