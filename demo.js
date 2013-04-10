@@ -41,16 +41,17 @@ $(document).ready(function(){
             gy = gamepad.axes[1];
         }
 
-        if(gx >= .1){
+        var tolerance = .4;
+        if(gx >= tolerance){
             gx = 1;
         }
-        if(gx <= -.1){
+        if(gx <= -tolerance){
             gx = -1;
         }
-        if(gy >= .1){
+        if(gy >= tolerance){
             gy = 1;
         }
-        if(gy <= -.1){
+        if(gy <= -tolerance){
             gy = -1;
         }
 
@@ -78,16 +79,6 @@ $(document).ready(function(){
         stats.begin();
         ctx.clear("blue");
         ctx.drawSprite(this.player);
-
-       for(var x = 0 ; x < this.player.img.width; x++){
-            for(var y = 0 ; y < this.player.img.height; y++){
-                var m = this.player.img.mask[this.player.img.width*y+x];
-                if(m){
-                    ctx.ctx.fillStyle = 'red';
-                    ctx.ctx.fillRect(this.player.x+x,this.player.y+y,1,1)
-                }
-            }
-        }
         ctx.drawSprite(this.enemy);
         stats.end();
     };
