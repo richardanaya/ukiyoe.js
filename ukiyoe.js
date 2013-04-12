@@ -51,14 +51,19 @@ Ukiyoe.Game.prototype.onResize = function(){
 
 Ukiyoe.Game.prototype.run = function(){
     if(this.scene.ready){
-        this.scene.run(this.context);
-        if(this.fullscreen){
-            if(this.screenContext.imageSmoothingEnabled) {this.screenContext.imageSmoothingEnabled = false;}
-            if(this.screenContext.webkitImageSmoothingEnabled) {this.screenContext.webkitImageSmoothingEnabled = false;}
-            if(this.screenContext.mozImageSmoothingEnabled) {this.screenContext.mozImageSmoothingEnabled = false;}
-            this.screenContext.drawImage(this.backScreen,this.backPosition.x,this.backPosition.y,this.backPosition.width,this.backPosition.height);
+        var currentTime = Ukiyoe.getTimeStamp();
+        if(this.lastTime != null){
+            var deltaTime = (currentTime-this.lastTime)/1000;
+            this.scene.run(this.context,deltaTime);
+            if(this.fullscreen){
+                if(this.screenContext.imageSmoothingEnabled) {this.screenContext.imageSmoothingEnabled = false;}
+                if(this.screenContext.webkitImageSmoothingEnabled) {this.screenContext.webkitImageSmoothingEnabled = false;}
+                if(this.screenContext.mozImageSmoothingEnabled) {this.screenContext.mozImageSmoothingEnabled = false;}
+                this.screenContext.drawImage(this.backScreen,this.backPosition.x,this.backPosition.y,this.backPosition.width,this.backPosition.height);
 
+            }
         }
+        this.lastTime = currentTime;
     }
     if(this.running){
         window.requestAnimationFrame(this.run.bind(this),this.screen);
@@ -265,6 +270,41 @@ Ukiyoe.Sprite.prototype.collidesWith = function(sprite){
     }
 
     return false;
+};
+
+Ukiyoe.AnimatedSprite = function(img){
+    Ukiyoe.Sprite.call(this,img);
+};
+
+Ukiyoe.AnimatedSprite.prototype = Object.create(Ukiyoe.Sprite.prototype);
+
+Ukiyoe.AnimatedSprite.fromFramesAndFPS = function(frames,fps){
+    var anim = new Ukiyoe.AnimatedSprite(frames[0]);
+    anim.frames = frames;;
+    anim.fps = fps;
+    anim.timePerFrame = 1/fps;
+    anim.timeLength = frames.length*anim.timePerFrame;
+    anim.time = 0;
+    return anim;
+};
+
+Ukiyoe.AnimatedSprite.prototype.update = function(deltaTime){
+    this.time+=deltaTime;
+    this.time %= this.timeLength;
+    var index = Math.floor(this.time/this.timePerFrame);
+    this.img = this.frames[index]
+};
+
+Ukiyoe.getTimeStamp = function(){
+    if (window.performance.now) {
+        return window.performance.now();
+    } else {
+        if (window.performance.webkitNow) {
+            return window.performance.webkitNow();
+        } else {
+            return new Date().getTime();
+        }
+    }
 };
 
 // http://paulirish.com/2011/requestanimationframe-for-smart-animating/

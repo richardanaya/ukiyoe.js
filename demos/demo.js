@@ -15,7 +15,10 @@ $(document).ready(function(){
     var DemoScene = function(){
         Ukiyoe.Scene.call(this);
         this.images = {
-            player: "bunny.png"
+            player: "player.png",
+            bird_0: "bird_of_paradise_0.png",
+            bird_1: "bird_of_paradise_1.png",
+            bird_2: "bird_of_paradise_2.png"
         };
         this.sounds = {
             bonk : ['bonk.wav']
@@ -27,7 +30,7 @@ $(document).ready(function(){
     DemoScene.prototype = Object.create(Ukiyoe.Scene.prototype);
 
     DemoScene.prototype.initialize = function(){
-        this.player = new Ukiyoe.Sprite(this.resources.images.player);
+        this.player = Ukiyoe.AnimatedSprite.fromFramesAndFPS([this.resources.images.bird_0,this.resources.images.bird_1,this.resources.images.bird_2,this.resources.images.bird_1],3);
         this.player.x = 10;
         this.player.y = 100;
 
@@ -36,46 +39,23 @@ $(document).ready(function(){
         this.enemy.y = 100;
 
         this.resources.music.background_music.play();
-
     };
 
-    DemoScene.prototype.run = function(ctx){
-        var gx = 0;
-        var gy = 0;
-
-        var gamepad = navigator.webkitGetGamepads && navigator.webkitGetGamepads()[0];
-        if(gamepad){
-            gx = gamepad.axes[0];
-            gy = gamepad.axes[1];
-        }
-
-        var tolerance = .4;
-        if(gx >= tolerance){
-            gx = 1;
-        }
-        if(gx <= -tolerance){
-            gx = -1;
-        }
-        if(gy >= tolerance){
-            gy = 1;
-        }
-        if(gy <= -tolerance){
-            gy = -1;
-        }
-
+    DemoScene.prototype.run = function(ctx,deltaTime){
+        this.player.update(deltaTime);
         var oldX = this.player.x;
         var oldY = this.player.y;
 
-        if(gx == 1 || Key.isDown(Key.RIGHT_ARROW)  || Key.isDown(Key.D)){
+        if(Key.isDown(Key.RIGHT_ARROW)  || Key.isDown(Key.D)){
             this.player.x += 1;
         }
-        if(gx == -1  || Key.isDown(Key.LEFT_ARROW) || Key.isDown(Key.A)){
+        if(Key.isDown(Key.LEFT_ARROW) || Key.isDown(Key.A)){
             this.player.x -= 1;
         }
-        if(gy == 1  || Key.isDown(Key.DOWN_ARROW) || Key.isDown(Key.S)){
+        if(Key.isDown(Key.DOWN_ARROW) || Key.isDown(Key.S)){
             this.player.y += 1;
         }
-        if(gy == -1  || Key.isDown(Key.UP_ARROW) || Key.isDown(Key.W)){
+        if(Key.isDown(Key.UP_ARROW) || Key.isDown(Key.W)){
             this.player.y -= 1;
         }
 
@@ -86,7 +66,7 @@ $(document).ready(function(){
         }
 
         stats.begin();
-        ctx.clear("blue");
+        ctx.clear("#87cefa");
         ctx.drawSprite(this.player);
         ctx.drawSprite(this.enemy);
         stats.end();
