@@ -6,6 +6,7 @@ Ukiyoe.Game = function(screen,fullscreen){
     this.screen = screen;
     this.backScreen = null;
     this.fullscreen = fullscreen;
+    this.time = 0;
     if(this.fullscreen){
         window.onresize = this.onResize.bind(this);
         this.screenContext = this.screen.getContext('2d');
@@ -54,6 +55,7 @@ Ukiyoe.Game.prototype.run = function(){
         var currentTime = Ukiyoe.getTimeStamp();
         if(this.lastTime != null){
             var deltaTime = (currentTime-this.lastTime)/1000;
+            this.time += deltaTime;
             this.scene.run(this.context,deltaTime);
             if(this.fullscreen){
                 if(this.screenContext.imageSmoothingEnabled) {this.screenContext.imageSmoothingEnabled = false;}
@@ -76,6 +78,7 @@ Ukiyoe.Game.prototype.play = function(){
     }
     if(!this.running){
         this.running = true;
+        this.time = 0;
         window.requestAnimationFrame(this.run.bind(this),this.screen);
     }
 };
@@ -338,6 +341,7 @@ Ukiyoe.AnimatedSprite.prototype = Object.create(Ukiyoe.Sprite.prototype);
 Ukiyoe.AnimatedSprite.fromFramesAndFPS = function(frames,fps){
     var anim = new Ukiyoe.AnimatedSprite(frames[0]);
     anim.anims.default = {
+        name: "default",
         frames : frames,
         fps : fps,
         timePerFrame : 1/fps,
@@ -356,6 +360,7 @@ Ukiyoe.AnimatedSprite.fromJSON = function(json){
             firstAnim = j;
         }
         anims[j] = {
+            name: j,
             frames : json[j].frames,
             fps : json[j].fps,
             timePerFrame : 1/json[j].fps,

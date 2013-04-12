@@ -16,6 +16,7 @@ $(document).ready(function(){
         Ukiyoe.Scene.call(this);
         this.images = {
             player: "player.png",
+            shit: "shit.png",
             bird_0: "bird_of_paradise_0.png",
             bird_1: "bird_of_paradise_1.png",
             bird_2: "bird_of_paradise_2.png"
@@ -48,10 +49,13 @@ $(document).ready(function(){
         this.player.y = 100;
 
         this.enemy = new Ukiyoe.Sprite(this.resources.images.player);
-        this.enemy.x = 200
-        this.enemy.y = 100;
+        this.enemy.x = Math.floor(game.width/2-this.enemy.width/2);
+        this.enemy.y = game.height - 50;
+
+        this.shit = null;
 
         this.resources.music.background_music.play();
+        this.triggered = false;
     };
 
     DemoScene.prototype.run = function(ctx,deltaTime){
@@ -73,15 +77,40 @@ $(document).ready(function(){
         if(Key.isDown(Key.UP_ARROW) || Key.isDown(Key.W)){
             this.player.y -= 1;
         }
-
-        if(this.player.collidesWith(this.enemy)){
-            this.player.x = oldX;
-            this.player.y = oldY;
-            this.resources.sounds.bonk.play();
+        if(Key.isDown(Key.SPACEBAR)){
+            this.triggered = true;
         }
+        if(Key.isUp(Key.SPACEBAR) && this.triggered){
+            this.shit = new Ukiyoe.Sprite(this.resources.images.shit);
+            if(this.player.currentAnim.name == "right"){
+                this.shit.x = this.player.x+10;
+                this.shit.y = this.player.y+13;
+            }
+            if(this.player.currentAnim.name == "left"){
+                this.shit.x = this.player.x+this.player.width-10;
+                this.shit.y = this.player.y+13;
+            }
+            this.triggered = false
+        }
+
+        if(this.shit != null){
+            this.shit.y += 1;
+
+            if(this.shit.collidesWith(this.enemy)){
+                this.resources.sounds.bonk.play();
+                this.shit = null;
+            }
+        }
+
+        this.enemy.x = Math.floor(game.width/2-this.enemy.width/2+Math.sin(game.time)*100);
+
+
 
         stats.begin();
         ctx.clear("#87cefa");
+        if(this.shit != null){
+            ctx.drawSprite(this.shit);
+        }
         ctx.drawSprite(this.player);
         ctx.drawSprite(this.enemy);
         stats.end();
