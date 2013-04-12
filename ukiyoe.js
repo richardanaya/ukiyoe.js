@@ -184,11 +184,11 @@ Ukiyoe.Scene.prototype.load = function(complete){
             _this.initialize();
             return;
         }
-
-        if(assetToLoad[numAssets-1].type=="image"){
+        var ass = assetToLoad[numAssets-1]
+        if(ass.type=="image"){
             var img = new Image();
             img.onload = function(){
-                _this.resources.images[assetToLoad[numAssets-1].name] = img;
+                _this.resources.images[ass.name] = img;
                 var c = document.createElement("canvas");
                 c.width = img.width;
                 c.height = img.height;
@@ -211,29 +211,29 @@ Ukiyoe.Scene.prototype.load = function(complete){
                 numAssets--;
                 loadAsset();
             };
-            img.src = assetToLoad[numAssets-1].path;
+            img.src = ass.path;
         }
-        if(assetToLoad[numAssets-1].type=="sound"){
+        if(ass.type=="sound"){
             var sound = new Howl({
-                urls: assetToLoad[numAssets-1].path,
+                urls: ass.path,
                 autoplay: false,
                 loop: false,
                 volume: 1,
                 onload: function() {
-                    _this.resources.sounds[assetToLoad[numAssets-1].name] = sound;
+                    _this.resources.sounds[ass.name] = sound;
                     numAssets--;
                     loadAsset();
                 }
             });
         }
-        if(assetToLoad[numAssets-1].type=="music"){
+        if(ass.type=="music"){
             var music = new Howl({
-                urls: assetToLoad[numAssets-1].path,
+                urls: ass.path,
                 autoplay: false,
                 loop: true,
                 volume: 1,
                 onload: function() {
-                    _this.resources.music[assetToLoad[numAssets-1].name] = music;
+                    _this.resources.music[ass.name] = music;
                     numAssets--;
                     loadAsset();
                 }

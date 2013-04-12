@@ -21,10 +21,10 @@ $(document).ready(function(){
             bird_2: "bird_of_paradise_2.png"
         };
         this.sounds = {
-            bonk : ['bonk.wav']
+            bonk : ['bonk.ogg','bonk.mp3']
         }
         this.music = {
-            background_music : ['music.mp3']
+            background_music : ['music.ogg','music.mp3']
         }
     };
     DemoScene.prototype = Object.create(Ukiyoe.Scene.prototype);
@@ -38,7 +38,7 @@ $(document).ready(function(){
                     fps:3
                 },
                 right: {
-                    frames: [this.resources.images.player],
+                    frames: [this.resources.images.bird_0,this.resources.images.bird_1,this.resources.images.bird_2,this.resources.images.bird_1],
                     fps:3
                 }
             }
