@@ -110,6 +110,16 @@ Ukiyoe.DrawingContext.prototype.clear = function(color){
 
 Ukiyoe.DrawingContext.prototype.drawSprite = function(sprite){
     this.ctx.drawImage(sprite.img,sprite.x,sprite.y);
+    this.ctx.fillStyle = "red";
+    if(sprite.showHitBox){
+        for(var x = 0 ;x < sprite.img.width; x++){
+            for(var y = 0 ;y < sprite.img.height; y++){
+                if(sprite.img.mask[y*sprite.img.width+x]){
+                    this.ctx.fillRect(sprite.x+x,sprite.y+y,1,1);
+                }
+            }
+        }
+    }
 }
 
 Ukiyoe.Scene = function(){
@@ -220,6 +230,7 @@ Ukiyoe.Sprite = function(img){
     this.height = img.height;
     this.x = 0;
     this.y = 0;
+    this.showHitBox = false;
 };
 
 Ukiyoe.Sprite.prototype.intersect = function(r1,r2){
