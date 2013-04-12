@@ -109,12 +109,35 @@ Ukiyoe.DrawingContext.prototype.clear = function(color){
 };
 
 Ukiyoe.DrawingContext.prototype.drawSprite = function(sprite){
-    this.ctx.drawImage(sprite.img,sprite.x,sprite.y);
+    this.ctx.save();
+    this.ctx.translate(sprite.x, sprite.y);
+    if(sprite.flipX && sprite.flipY){
+        this.ctx.translate(sprite.img.width, sprite.img.height);
+        this.ctx.scale(-1, -1);
+    }
+    else if(sprite.flipX){
+        this.ctx.translate(sprite.img.width, 0);
+        this.ctx.scale(-1, 1);
+    }
+    else if(sprite.flipY){
+        this.ctx.translate(0, sprite.img.height);
+        this.ctx.scale(1, -1);
+    }
+    this.ctx.drawImage(sprite.img,0,0);
+    this.ctx.restore();
     this.ctx.fillStyle = "red";
     if(sprite.showHitBox){
         for(var x = 0 ;x < sprite.img.width; x++){
             for(var y = 0 ;y < sprite.img.height; y++){
-                if(sprite.img.mask[y*sprite.img.width+x]){
+                var mx = x;
+                if(sprite.flipX){
+                    mx = sprite.img.width-1-mx;
+                }
+                var my = y;
+                if(sprite.flipY){
+                    my = sprite.img.height-1-my;
+                }
+                if(sprite.img.mask[my*sprite.img.width+mx]){
                     this.ctx.fillRect(sprite.x+x,sprite.y+y,1,1);
                 }
             }
@@ -225,12 +248,18 @@ Ukiyoe.Scene.prototype.unload = function(){
 };
 
 Ukiyoe.Sprite = function(img){
-    this.img = img;
-    this.width = img.width;
-    this.height = img.height;
+    this.setImage(img);
     this.x = 0;
     this.y = 0;
     this.showHitBox = false;
+    this.flipX = false;
+    this.flipY = false;
+};
+
+Ukiyoe.Sprite.prototype.setImage = function(img){
+    this.img = img;
+    this.width = img.width;
+    this.height = img.height;
 };
 
 Ukiyoe.Sprite.prototype.intersect = function(r1,r2){
@@ -256,8 +285,8 @@ Ukiyoe.Sprite.prototype.getRect = function(){
     return {
         top: this.y,
         left: this.x,
-        right: this.x+this.width,
-        bottom: this.y+this.height
+        right: this.x+this.width-1,
+        bottom: this.y+this.height-1
     }
 }
 
@@ -269,9 +298,25 @@ Ukiyoe.Sprite.prototype.collidesWith = function(sprite){
             for(var y = intersect.top; y <= intersect.bottom; y++){
                 var myX = x-this.x;
                 var myY = y-this.y;
-                var myMask = this.img.mask[this.img.width*myY+myX];
+                var ourMaskX = myX;
+                if(this.flipX){
+                    ourMaskX = this.img.width-1-ourMaskX;
+                }
+                var ourMaskY = myY;
+                if(this.flipY){
+                    ourMaskY = this.img.height-1-ourMaskY;
+                }
+                var myMask = this.img.mask[this.img.width*ourMaskY+ourMaskX];
                 var theirX = x-sprite.x;
                 var theirY = y-sprite.y;
+                var theirMaskX = theirX;
+                if(sprite.flipX){
+                    theirMaskX = sprite.img.width-1-theirMaskX;
+                }
+                var theirMaskY = theirY;
+                if(sprite.flipY){
+                    theirMaskY = sprite.img.height-1-theirMaskY;
+                }
                 var theirMask = sprite.img.mask[sprite.img.width*theirY+theirX];
                 if(myMask && theirMask){
                     return true;
@@ -285,25 +330,65 @@ Ukiyoe.Sprite.prototype.collidesWith = function(sprite){
 
 Ukiyoe.AnimatedSprite = function(img){
     Ukiyoe.Sprite.call(this,img);
+    this.anims = {}
 };
 
 Ukiyoe.AnimatedSprite.prototype = Object.create(Ukiyoe.Sprite.prototype);
 
 Ukiyoe.AnimatedSprite.fromFramesAndFPS = function(frames,fps){
     var anim = new Ukiyoe.AnimatedSprite(frames[0]);
-    anim.frames = frames;;
-    anim.fps = fps;
-    anim.timePerFrame = 1/fps;
-    anim.timeLength = frames.length*anim.timePerFrame;
+    anim.anims.default = {
+        frames : frames,
+        fps : fps,
+        timePerFrame : 1/fps,
+        timeLength : frames.length*1/fps
+    };
     anim.time = 0;
+    anim.currentAnim = anim.anims.default;
     return anim;
+};
+
+Ukiyoe.AnimatedSprite.fromJSON = function(json){
+    var anims = {};
+    var firstAnim = null;
+    for(var j in json){
+        if(firstAnim == null){
+            firstAnim = j;
+        }
+        anims[j] = {
+            frames : json[j].frames,
+            fps : json[j].fps,
+            timePerFrame : 1/json[j].fps,
+            timeLength : json[j].frames.length*1/json[j].fps
+        };
+        if(json[j].flipX){anims[j].flipX = true; }
+        else { anims[j].flipX = false; }
+        if(json[j].flipY){anims[j].flipY = true; }
+        else { anims[j].flipY = false; }
+    }
+    var anim = new Ukiyoe.AnimatedSprite(anims[firstAnim].frames[0]);
+    anim.anims = anims;
+    anim.time = 0;
+    anim.currentAnim = anim.anims[j];
+    return anim;
+};
+
+Ukiyoe.AnimatedSprite.prototype.setAnimation = function(name){
+    if(this.anims[name] != this.currentAnim){
+        this.currentAnim = this.anims[name];
+        this.setImage(this.currentAnim.frames[0]);
+        this.flipX = this.currentAnim.flipX;
+        this.flipY = this.currentAnim.flipY;
+    }
 };
 
 Ukiyoe.AnimatedSprite.prototype.update = function(deltaTime){
     this.time+=deltaTime;
-    this.time %= this.timeLength;
-    var index = Math.floor(this.time/this.timePerFrame);
-    this.img = this.frames[index]
+    this.time %= this.currentAnim.timeLength;
+    var index = Math.floor(this.time/this.currentAnim.timePerFrame);
+    this.setImage(this.currentAnim.frames[index]);
+    this.flipX = this.currentAnim.flipX;
+    this.flipY = this.currentAnim.flipY;
 };
 
 Ukiyoe.getTimeStamp = function(){

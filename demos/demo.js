@@ -30,7 +30,20 @@ $(document).ready(function(){
     DemoScene.prototype = Object.create(Ukiyoe.Scene.prototype);
 
     DemoScene.prototype.initialize = function(){
-        this.player = Ukiyoe.AnimatedSprite.fromFramesAndFPS([this.resources.images.bird_0,this.resources.images.bird_1,this.resources.images.bird_2,this.resources.images.bird_1],3);
+        this.player = Ukiyoe.AnimatedSprite.fromJSON({
+                left: {
+                    frames: [this.resources.images.bird_0,this.resources.images.bird_1,this.resources.images.bird_2,this.resources.images.bird_1],
+                    flipX: true,
+                    flipY: false,
+                    fps:3
+                },
+                right: {
+                    frames: [this.resources.images.player],
+                    fps:3
+                }
+            }
+        );
+        this.player.setAnimation("right");
         this.player.x = 10;
         this.player.y = 100;
 
@@ -47,9 +60,11 @@ $(document).ready(function(){
         var oldY = this.player.y;
 
         if(Key.isDown(Key.RIGHT_ARROW)  || Key.isDown(Key.D)){
+            this.player.setAnimation("right");
             this.player.x += 1;
         }
         if(Key.isDown(Key.LEFT_ARROW) || Key.isDown(Key.A)){
+            this.player.setAnimation("left");
             this.player.x -= 1;
         }
         if(Key.isDown(Key.DOWN_ARROW) || Key.isDown(Key.S)){
