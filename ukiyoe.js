@@ -76,6 +76,7 @@ Ukiyoe.Game.prototype.run = function(){
                 this.stats.begin();
             }
             this.scene.run(this.context,deltaTime);
+            this.scene.render(this.context,deltaTime);
             if(this.stats){
                 this.stats.end();
             }
@@ -191,6 +192,8 @@ Ukiyoe.Scene = function(){
     this.sounds = {};
     this.music = {};
     this.ready = false;
+    this.clearColor = 'black';
+    this.children = [];
 };
 
 Ukiyoe.Scene.prototype.addImageResource = function(name,file){
@@ -240,8 +243,13 @@ Ukiyoe.Scene.prototype.createSpriteAnimation = function(anims){
     return Ukiyoe.AnimatedSprite.fromJSON(json);
 };
 
+Ukiyoe.Scene.prototype.run = function() { }
 
-Ukiyoe.Scene.prototype.run = function(){
+Ukiyoe.Scene.prototype.render = function(ctx,deltaTime){
+    ctx.clear(this.clearColor);
+    for(var i =0; i < this.children.length; i++){
+        ctx.drawSprite(this.children[i]);
+    }
 };
 
 Ukiyoe.Scene.prototype.load = function(complete){
@@ -335,6 +343,23 @@ Ukiyoe.Scene.prototype.load = function(complete){
 
 Ukiyoe.Scene.prototype.unload = function(){
 
+};
+
+Ukiyoe.Scene.prototype.setClearColor = function(color){
+    this.clearColor = color;
+};
+
+Ukiyoe.Scene.prototype.add = function(renderable){
+    this.children.push(renderable);
+};
+
+Ukiyoe.Scene.prototype.remove = function(renderable){
+    for(var i = 0; i < this.children.length; i++){
+        if(this.children[i] == renderable){
+            this.children.splice(i,1);
+            return;
+        }
+    }
 };
 
 Ukiyoe.Sprite = function(img){

@@ -37,6 +37,10 @@ $(document).ready(function(){
 
         this.shit = null;
         this.triggered = false;
+
+        this.setClearColor("#87cefa");
+        this.add(this.player);
+        this.add(this.enemy);
     };
 
     DemoScene.prototype.run = function(ctx,deltaTime){
@@ -62,7 +66,9 @@ $(document).ready(function(){
             this.triggered = true;
         }
         if(Key.isUp(Key.SPACEBAR) && this.triggered){
+            this.remove(this.shit);
             this.shit = new Ukiyoe.Sprite(this.resources.images.shit);
+            this.add(this.shit);
             if(this.player.currentAnimation.name == "right"){
                 this.shit.x = this.player.x+10;
                 this.shit.y = this.player.y+13;
@@ -79,19 +85,12 @@ $(document).ready(function(){
 
             if(this.shit.collidesWith(this.enemy)){
                 this.resources.sounds.bonk.play();
+                this.remove(this.shit);
                 this.shit = null;
             }
         }
 
         this.enemy.x = Math.floor(game.width/2-this.enemy.width/2+Math.sin(game.time)*100);
-
-
-        ctx.clear("#87cefa");
-        if(this.shit != null){
-            ctx.drawSprite(this.shit);
-        }
-        ctx.drawSprite(this.player);
-        ctx.drawSprite(this.enemy);
     };
 
     var game = new Ukiyoe.Game(256,224,true,true);
