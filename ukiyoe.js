@@ -1,6 +1,9 @@
 var Ukiyoe = {};
 
-Ukiyoe.Game = function(screen,fullscreen){
+Ukiyoe.Game = function(width,height,fullscreen,showStats){
+    var screen = document.getElementById("screen");
+    screen.width = width;
+    screen.height = height;
     this.width = screen.width;
     this.height = screen.height;
     this.screen = screen;
@@ -25,6 +28,19 @@ Ukiyoe.Game = function(screen,fullscreen){
     if(this.context.ctx.mozImageSmoothingEnabled) {this.context.ctx.mozImageSmoothingEnabled = false;}
     this.running = false;
     this.scene = null;
+
+    if(showStats){
+        var stats = new Stats();
+        stats.setMode(0); // 0: fps, 1: ms
+
+        // Align top-left
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+
+        document.body.appendChild( stats.domElement );
+        this.stats = stats;
+    }
 };
 
 Ukiyoe.Game.prototype.onResize = function(){
@@ -55,8 +71,14 @@ Ukiyoe.Game.prototype.run = function(){
         var currentTime = Ukiyoe.getTimeStamp();
         if(this.lastTime != null){
             var deltaTime = (currentTime-this.lastTime)/1000;
-            this.time += deltaTime;
+            this.scene.time += deltaTime;
+            if(this.stats){
+                this.stats.begin();
+            }
             this.scene.run(this.context,deltaTime);
+            if(this.stats){
+                this.stats.end();
+            }
             if(this.fullscreen){
                 if(this.screenContext.imageSmoothingEnabled) {this.screenContext.imageSmoothingEnabled = false;}
                 if(this.screenContext.webkitImageSmoothingEnabled) {this.screenContext.webkitImageSmoothingEnabled = false;}
@@ -89,6 +111,9 @@ Ukiyoe.Game.prototype.changeScene = function(scene){
         this.scene.unload();
     }
     this.scene = scene;
+    this.scene.time = 0;
+    this.scene.width = this.width;
+    this.scene.height = this.height;
     this.scene.load();
 };
 
@@ -148,13 +173,75 @@ Ukiyoe.DrawingContext.prototype.drawSprite = function(sprite){
     }
 }
 
+Ukiyoe.Animation = function(name,frames){
+    this.name = name;
+    this.frames = frames;
+    this.flipX = false;
+    this.flipY = false;
+    this.fps = 0;
+}
+
 Ukiyoe.Scene = function(){
     this.resources = {
         images: {},
         sounds: {},
         music: {}
     };
+    this.images = {};
+    this.sounds = {};
+    this.music = {};
     this.ready = false;
+};
+
+Ukiyoe.Scene.prototype.addImageResource = function(name,file){
+    this.images[name] = file;
+};
+
+Ukiyoe.Scene.prototype.addSoundResource = function(name,files){
+    this.sounds[name] = files;
+};
+
+Ukiyoe.Scene.prototype.addMusicResource = function(name,files){
+    this.music[name] = files;
+};
+
+Ukiyoe.Scene.prototype.playSound = function(name){
+    this.resources.sounds[name].play();
+};
+
+Ukiyoe.Scene.prototype.playMusic = function(name){
+    this.resources.music[name].play();
+};
+
+Ukiyoe.Scene.prototype.createSprite = function(name){
+    return new Ukiyoe.Sprite(this.resources.images[name]);
+};
+
+
+Ukiyoe.Scene.prototype.createAnimation = function(name, frames){
+    return new Ukiyoe.Animation(name,frames);
+}
+
+Ukiyoe.Scene.prototype.createSpriteAnimation = function(anims){
+    var json = {};
+    for(var i=0;i<anims.length;i++){
+        var anim = anims[i];
+        json[anim.name] = {
+            flipX: anim.flipX,
+            flipY: anim.flipY,
+            fps: anim.fps
+        }
+        var frames = [];
+        for(var j=0;j<anim.frames.length;j++){
+            frames.push(this.resources.images[anim.frames[j]]);
+        }
+        json[anim.name].frames = frames;
+    }
+    return Ukiyoe.AnimatedSprite.fromJSON(json);
+};
+
+
+Ukiyoe.Scene.prototype.run = function(){
 };
 
 Ukiyoe.Scene.prototype.load = function(complete){
@@ -348,7 +435,7 @@ Ukiyoe.AnimatedSprite.fromFramesAndFPS = function(frames,fps){
         timeLength : frames.length*1/fps
     };
     anim.time = 0;
-    anim.currentAnim = anim.anims.default;
+    anim.currentAnimation = anim.anims.default;
     return anim;
 };
 
@@ -374,26 +461,26 @@ Ukiyoe.AnimatedSprite.fromJSON = function(json){
     var anim = new Ukiyoe.AnimatedSprite(anims[firstAnim].frames[0]);
     anim.anims = anims;
     anim.time = 0;
-    anim.currentAnim = anim.anims[j];
+    anim.currentAnimation = anim.anims[j];
     return anim;
 };
 
 Ukiyoe.AnimatedSprite.prototype.setAnimation = function(name){
-    if(this.anims[name] != this.currentAnim){
-        this.currentAnim = this.anims[name];
-        this.setImage(this.currentAnim.frames[0]);
-        this.flipX = this.currentAnim.flipX;
-        this.flipY = this.currentAnim.flipY;
+    if(this.anims[name] != this.currentAnimation){
+        this.currentAnimation = this.anims[name];
+        this.setImage(this.currentAnimation.frames[0]);
+        this.flipX = this.currentAnimation.flipX;
+        this.flipY = this.currentAnimation.flipY;
     }
 };
 
 Ukiyoe.AnimatedSprite.prototype.update = function(deltaTime){
     this.time+=deltaTime;
-    this.time %= this.currentAnim.timeLength;
-    var index = Math.floor(this.time/this.currentAnim.timePerFrame);
-    this.setImage(this.currentAnim.frames[index]);
-    this.flipX = this.currentAnim.flipX;
-    this.flipY = this.currentAnim.flipY;
+    this.time %= this.currentAnimation.timeLength;
+    var index = Math.floor(this.time/this.currentAnimation.timePerFrame);
+    this.setImage(this.currentAnimation.frames[index]);
+    this.flipX = this.currentAnimation.flipX;
+    this.flipY = this.currentAnimation.flipY;
 };
 
 Ukiyoe.getTimeStamp = function(){
@@ -414,27 +501,27 @@ Ukiyoe.getTimeStamp = function(){
 // requestAnimationFrame polyfill by Erik Möller
 // fixes from Paul Irish and Tino Zijdel
 
-    (function() {
-        var lastTime = 0;
-        var vendors = ['ms', 'moz', 'webkit', 'o'];
-        for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
-            window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
-            window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame']
-                || window[vendors[x]+'CancelRequestAnimationFrame'];
-        }
+(function() {
+    var lastTime = 0;
+    var vendors = ['ms', 'moz', 'webkit', 'o'];
+    for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+        window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+        window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame']
+            || window[vendors[x]+'CancelRequestAnimationFrame'];
+    }
 
-        if (!window.requestAnimationFrame)
-            window.requestAnimationFrame = function(callback, element) {
-                var currTime = new Date().getTime();
-                var timeToCall = Math.max(0, 16 - (currTime - lastTime));
-                var id = window.setTimeout(function() { callback(currTime + timeToCall); },
-                    timeToCall);
-                lastTime = currTime + timeToCall;
-                return id;
-            };
+    if (!window.requestAnimationFrame)
+        window.requestAnimationFrame = function(callback, element) {
+            var currTime = new Date().getTime();
+            var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+            var id = window.setTimeout(function() { callback(currTime + timeToCall); },
+                timeToCall);
+            lastTime = currTime + timeToCall;
+            return id;
+        };
 
-        if (!window.cancelAnimationFrame)
-            window.cancelAnimationFrame = function(id) {
-                clearTimeout(id);
-            };
-    }());
+    if (!window.cancelAnimationFrame)
+        window.cancelAnimationFrame = function(id) {
+            clearTimeout(id);
+        };
+}());

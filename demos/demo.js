@@ -1,60 +1,41 @@
 $(document).ready(function(){
-
-    var stats = new Stats();
-    stats.setMode(0); // 0: fps, 1: ms
-
-// Align top-left
-    stats.domElement.style.position = 'absolute';
-    stats.domElement.style.left = '0px';
-    stats.domElement.style.top = '0px';
-
-    document.body.appendChild( stats.domElement );
-
-    var game = new Ukiyoe.Game(document.getElementById('screen'),true);
-
     var DemoScene = function(){
         Ukiyoe.Scene.call(this);
-        this.images = {
-            player: "player.png",
-            shit: "shit.png",
-            bird_0: "bird_of_paradise_0.png",
-            bird_1: "bird_of_paradise_1.png",
-            bird_2: "bird_of_paradise_2.png"
-        };
-        this.sounds = {
-            bonk : ['bonk.ogg','bonk.mp3']
-        }
-        this.music = {
-            background_music : ['music.ogg','music.mp3']
-        }
+        this.addImageResource("player","player.png");
+        this.addImageResource("shit","shit.png");
+        this.addImageResource("bird_0","bird_of_paradise_0.png");
+        this.addImageResource("bird_1","bird_of_paradise_1.png");
+        this.addImageResource("bird_2","bird_of_paradise_2.png");
+        this.addSoundResource("bonk",["bonk.ogg","bonk.mp3"]);
+        this.addMusicResource("background_music",["music.ogg","music.mp3"]);
     };
     DemoScene.prototype = Object.create(Ukiyoe.Scene.prototype);
 
     DemoScene.prototype.initialize = function(){
-        this.player = Ukiyoe.AnimatedSprite.fromJSON({
-                left: {
-                    frames: [this.resources.images.bird_0,this.resources.images.bird_1,this.resources.images.bird_2,this.resources.images.bird_1],
-                    flipX: true,
-                    flipY: false,
-                    fps:3
-                },
-                right: {
-                    frames: [this.resources.images.bird_0,this.resources.images.bird_1,this.resources.images.bird_2,this.resources.images.bird_1],
-                    fps:3
-                }
-            }
-        );
+        var left = this.createAnimation("left",["bird_0","bird_1","bird_2"]);
+        left.flipX = true;
+        left.fps = 3;
+
+        var right = this.createAnimation("right",["bird_0","bird_1","bird_2"]);
+        right.fps = 3;
+
+        this.player = this.createSpriteAnimation([left,right]);
+        this.player.setAnimation("left");
+
+        this.enemy = this.createSprite("player");
+        this.enemy.x = this.width/2-this.player.width/2;
+        this.enemy.y = 50;
+
+        this.playMusic("background_music");
+
         this.player.setAnimation("right");
         this.player.x = 10;
         this.player.y = 100;
 
-        this.enemy = new Ukiyoe.Sprite(this.resources.images.player);
-        this.enemy.x = Math.floor(game.width/2-this.enemy.width/2);
-        this.enemy.y = game.height - 50;
+        this.enemy.x = Math.floor(this.width/2-this.enemy.width/2);
+        this.enemy.y = this.height - 50;
 
         this.shit = null;
-
-        this.resources.music.background_music.play();
         this.triggered = false;
     };
 
@@ -82,11 +63,11 @@ $(document).ready(function(){
         }
         if(Key.isUp(Key.SPACEBAR) && this.triggered){
             this.shit = new Ukiyoe.Sprite(this.resources.images.shit);
-            if(this.player.currentAnim.name == "right"){
+            if(this.player.currentAnimation.name == "right"){
                 this.shit.x = this.player.x+10;
                 this.shit.y = this.player.y+13;
             }
-            if(this.player.currentAnim.name == "left"){
+            if(this.player.currentAnimation.name == "left"){
                 this.shit.x = this.player.x+this.player.width-10;
                 this.shit.y = this.player.y+13;
             }
@@ -105,17 +86,15 @@ $(document).ready(function(){
         this.enemy.x = Math.floor(game.width/2-this.enemy.width/2+Math.sin(game.time)*100);
 
 
-
-        stats.begin();
         ctx.clear("#87cefa");
         if(this.shit != null){
             ctx.drawSprite(this.shit);
         }
         ctx.drawSprite(this.player);
         ctx.drawSprite(this.enemy);
-        stats.end();
     };
 
+    var game = new Ukiyoe.Game(256,224,true,true);
     game.changeScene(new DemoScene());
     game.play();
 });
